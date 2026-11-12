@@ -1,6 +1,6 @@
 # 第 27 项 Codified Context · MCP 检索复现
 
-本项目复现论文 §3.3.1 的本地上下文检索。给作者的 MCP 服务一条开发任务，它按关键词给代码库的子系统打分，再返回相关模块和建议查看的文件路径。这个流程和 HW2 的 SocialGraph MCP 类似，都是把问题交给工具，再读取结构化的返回结果。这里查询的是项目资料。 [论文 §3.3.1](https://arxiv.org/html/2602.20478v1#S3.SS3.SSS1) · [作者的工具说明](https://github.com/arisvas4/codified-context-infrastructure/tree/6b0408fe86d8e802bcbd00cd6d2d057f288f518a/mcp-server)
+本项目复现论文 §3.3.1 的本地上下文检索。给作者的 MCP 服务一条开发任务，它按关键词给代码库的子系统打分，再返回相关模块和建议查看的文件路径。是把问题交给工具，再读取结构化的返回结果。这里查询的是项目资料。 [论文 §3.3.1](https://arxiv.org/html/2602.20478v1#S3.SS3.SSS1) · [作者的工具说明](https://github.com/arisvas4/codified-context-infrastructure/tree/6b0408fe86d8e802bcbd00cd6d2d057f288f518a/mcp-server)
 
 ## 论文背景
 
