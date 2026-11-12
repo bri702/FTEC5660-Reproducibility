@@ -1,99 +1,70 @@
 # 第 27 项 Codified Context · MCP 检索复现
 
-本项目复现论文 §3.3.1 的本地上下文检索。给作者的 MCP 服务一条开发任务，它按关键词给代码库的子系统打分，再返回相关模块和建议查看的文件路径。是把问题交给工具，再读取结构化的返回结果。这里查询的是项目资料。 [论文 §3.3.1](https://arxiv.org/html/2602.20478v1#S3.SS3.SSS1) · [作者的工具说明](https://github.com/arisvas4/codified-context-infrastructure/tree/6b0408fe86d8e802bcbd00cd6d2d057f288f518a/mcp-server)
+本项目复现 Codified Context 的本地上下文检索。MCP 服务读取一条游戏开发任务，按关键词给代码库的子系统打分，再返回相关模块和建议查看的文件路径。实验比较三种关键词匹配规则在同一批 26 道评估题上的表现。 [论文 §3.3.1](https://arxiv.org/html/2602.20478v1#S3.SS3.SSS1) · [作者的工具说明](https://github.com/arisvas4/codified-context-infrastructure/tree/6b0408fe86d8e802bcbd00cd6d2d057f288f518a/mcp-server)
 
-## 论文背景
+作者将项目知识分为项目规则、领域专家智能体和按需查阅的文档三层。本实验复现第三层的 `find_relevant_context` 工具。 [论文三层架构](https://arxiv.org/html/2602.20478v1#S3)
 
-作者把编程 Agent 需要的项目知识分为三层。项目规则在每次会话开始时加载。网络同步、代码审查等专家 Agent 按任务调用。具体模块的设计文档则通过 MCP 按需检索。本实验验证第三层的一个工具 `find_relevant_context`，用本地 Python 客户端通过标准输入输出（stdio）连接作者的服务。安装依赖后可以离线运行，所需的输入是本地任务描述和作者随服务发布的索引。 [论文三层架构](https://arxiv.org/html/2602.20478v1#S3)
+## 三步实验
 
-## 安装和运行
+三版使用同一份 [cases.json](cases.json)。其中有 26 道自编评估题和一条作者文档里的示例。每道评估题标注一个预期优先查看的子系统。三版共用子系统索引、计分权重、排序和文件推荐规则，依次运行同样的查询。
 
-需要 Python 3.12 和 Git。在 PyCharm 的 **Terminal** 或系统终端逐行执行：
+1. **作者原版（子串匹配）。** 以作者 v1.0.0 的 MCP 服务为基线。原版检查关键词是否出现在任务描述里，例如 `screenshot` 会触发瞄准模块的 `screen`。用 `fix camera offset` 核对作者示例，原版将 `rendering` 排在第一位，建议路径包含 `coordinate-systems.md`。作者示例单独记录，汇总指标只计 26 道评估题。 [作者示例](https://github.com/arisvas4/codified-context-infrastructure/blob/v1.0.0/mcp-server/README.md#key-data-structures)
+2. **严格整词。** 把关键词命中改为词边界匹配，排除 `screenshot` 中的 `screen`。这一步也漏掉了正常复数。输入 `Sprites and textures flicker.` 时，严格整词版返回空列表。 [第一步补丁](runs/verified-26-three-variants/01_original_to_word_boundary.diff)
+3. **整词加常规复数。** 先检查完整关键词，未命中时再尝试关键词最后一个词的常规复数。于是 `sprites` 和 `textures` 可以命中 `sprite` 和 `texture`，`text` 仍无法命中 `textures`。该题的渲染模块回到第一位。 [第二步补丁](runs/verified-26-three-variants/02_word_boundary_to_plural.diff)
+
+## 安装和复跑
+
+需要 Python 3.12 和 Git。在 PyCharm 的 **Terminal** 或系统终端执行以下命令。
 
 ```bash
 git clone https://github.com/bri702/FTEC5660-Reproducibility.git
 cd FTEC5660-Reproducibility
 python3.12 -m venv .venv
 ./.venv/bin/python -m pip install -r requirements.txt
-./.venv/bin/python -u run_project27.py
-```
-
-也可以用 PyCharm 打开克隆后的项目，把解释器设为项目里的 `.venv/bin/python`，再右键 `run_project27.py` 选择 **Run**。脚本默认读取 `cases.json`，同时运行原版和修改版，并打印结果目录。安装依赖后，实验可以离线运行，无需模型或 API Key。
-
-## 实验怎么做
-
-1. **复现作者记录的行为。** 对作者说明中的检索示例调用原版 MCP，核对返回的子系统和文件路径。示例结果单独记录。
-2. **固定 26 条游戏项目相关题。** `cases.json` 包含 15 条原有的开发任务和 11 条按游戏开发场景编写的故障描述。每题标注一个预期优先查看的模块。故障题包含容易命中其他模块的词，例如截图里的 `screenshot` 会触发瞄准模块的 `screen`。
-3. **只改子系统关键词的命中条件。** 原版检查子串，所以 `repair` 会命中 `ai`。新版要求词边界，并允许关键词最后一个单词的常规复数，比如 `sprites` 命中 `sprite`。`ai`、`ui` 这类短词只做整词匹配。两版使用同一份索引、计分权重、排序和文件返回规则。生成修改版的源码差异保存在 `whole_word_plural.diff`。
-4. **同一批题调用两版 MCP。** 客户端通过本地标准输入输出启动两个服务，核对工具列表和子系统索引，再逐题调用 `find_relevant_context`。
-
-| 指标 | 怎么算 |
-| --- | --- |
-| 第一名命中率 | 有目标模块的题里，第一名属于预期标签的比例 |
-| 前三名命中率 | 有目标模块的题里，前三名至少出现一个预期模块的比例 |
-| 相关题前三中的未标注候选数 | 对每条相关题，统计前三名里不在其预期标签中的模块，再把数量加起来 |
-
-## 26 题实测结果
-
-两版各处理了 26 条评估题，另外运行了作者说明中的示例 `fix camera offset`。示例中，`rendering` 和 `aiming` 都因命中 `camera` 各得 1 分，`rendering` 排第一，建议路径包含 `coordinate-systems.md`。客户端还对第一名调用了 `get_files_for_subsystem`。 [作者的 MCP 说明](https://github.com/arisvas4/codified-context-infrastructure/blob/v1.0.0/mcp-server/README.md#key-data-structures)
-
-| 指标 | 原版子串匹配 | 整词＋复数 |
-|---|---:|---:|
-| 26 条游戏相关题第一名命中 | 21/26（80.8%） | 23/26（88.5%） |
-| 26 条游戏相关题前三名命中 | 25/26（96.2%） | 26/26（100%） |
-| 前三中的未标注候选总数 | 42 | 23 |
-
-- 读档后音乐播放两次时，原版在 `saved` 和 `loading` 中分别命中 `save` 和 `load`，让服务层和资源加载排在音频前面。改版把音频从第三升到第一。
-- 无界面截图全黑时，原版从 `screenshot` 里命中 `screen`，把瞄准模块排在第二。改版只返回开发工具模块。
-- 手柄拔掉再插回去后识别不到时，原版把 `fails` 里的 `ai` 算成命中。改版去掉这次误匹配，`input` 从第二升到第一。
-- 步枪按一次扳机却发射两枚弹丸时，改版仍把瞄准排第一、战斗排第二。`fire` 和 `projectile` 是瞄准索引里的完整词，词边界和复数处理无法判断句子在说哪个环节。
-- 血条颜色错误时，`ui` 从第四升到第三。改版去掉了 `health` 里的 `heal`，但 `health` 仍是战斗和伤害模块的完整关键词。
-- 原有 15 条相关题在两版都保持了第一名命中。复数规则保住了 `sprites` 对 `sprite`、`textures` 对 `texture` 的有用匹配，同时去掉 `textures` 对 `text` 的词内匹配。
-
-[汇总指标](runs/verified-26-game/metrics.csv) · [逐题对照](runs/verified-26-game/case_results.csv) · [MCP 原始响应](runs/verified-26-game/raw_mcp.json) · [源码差异](runs/verified-26-game/whole_word_plural.diff)
-
-
-## 同一批 26 题的三版本复跑
-
-三版使用同样的 26 道自编评估题。每版另外运行一次作者示例，该示例单独记录。
-
-| 版本 | Top-1 命中 | Top-3 命中 | 前三名未标注候选总数 |
-| --- | ---: | ---: | ---: |
-| 作者原版 | 21/26 | 25/26 | 42 |
-| 严格整词 | 18/26 | 21/26 | 20 |
-| 整词加常规复数 | 23/26 | 26/26 | 23 |
-
-[汇总指标](runs/verified-26-three-variants/metrics.csv) · [81 行逐题结果](runs/verified-26-three-variants/case_results.csv) · [MCP 原始响应](runs/verified-26-three-variants/raw_mcp.json) · [报告引用的复跑压缩包](runs/verified-26-three-variants/项目27_26题三版本复跑.zip)
-
-代码变更分为两步。先将子串匹配改为严格整词匹配，再加入常规复数处理。 [第一步补丁](runs/verified-26-three-variants/01_original_to_word_boundary.diff) · [第二步补丁](runs/verified-26-three-variants/02_word_boundary_to_plural.diff)
-
-按上文安装依赖后，在仓库根目录运行三版本对照。
-
-```bash
 ./.venv/bin/python -B runs/verified-26-three-variants/run_three_variants.py --project . --out runs/three-variant-26
 ```
 
-## 怎么查看输出
+已有项目时，从项目根目录执行最后一行即可。每次复跑请给 `--out` 指定一个新目录。脚本自动生成临时改版，依次启动三套本地 MCP 服务。装好依赖后可离线运行，无需模型或 API Key。 [复跑脚本](runs/verified-26-three-variants/run_three_variants.py)
 
-默认每次运行都在 `runs` 下创建一个以 UTC 时间命名的新目录。两次 MCP 服务的标准错误输出保存在同目录的日志文件。
+## 26 题实测结果
+
+| 版本 | Top-1 命中 | Top-3 命中 | 前三名未标注候选总数 |
+| --- | ---: | ---: | ---: |
+| 作者原版 | 21/26（80.8%） | 25/26（96.2%） | 42 |
+| 严格整词 | 18/26（69.2%） | 21/26（80.8%） | 20 |
+| 整词加常规复数 | 23/26（88.5%） | 26/26（100%） | 23 |
+
+Top-1 和 Top-3 分别统计预期子系统排第一、进入前三的题数。未标注候选总数是逐题累加前三名中未列入该题人工标签的候选。
+
+加入常规复数后，相比严格整词，两项命中各增加 5 道。相比作者原版，第一名命中多 2 道，前三名命中多 1 道，未标注候选总数从 42 降到 23。
+
+- 手柄重连题中，原版把 `fails` 里的 `ai` 计给 AI 模块。改进版排除这次命中，`input` 从第二升到第一。
+- 读档后音乐播放两次时，原版从 `saved` 和 `loading` 命中 `save` 和 `load`。改进版将 `audio` 从第三升到第一。
+- 血条颜色错误时，排除 `health` 里的 `heal` 让 `ui` 从第四升到第三。`health` 仍是战斗和伤害模块的完整关键词。
+- 步枪按一次扳机却发射两枚弹丸时，改进版仍将瞄准排第一、战斗排第二。`fire` 和 `projectile` 在瞄准模块的索引中都是完整关键词。
+
+## 结果文件
 
 | 文件 | 内容 |
 | --- | --- |
-| `metrics.csv` | 原版和修改版的汇总指标 |
-| `case_results.csv` | 每道题的预期模块、实际排序和命中结果 |
-| `raw_mcp.json` | MCP 服务返回的原始结果，包括命中关键词和文件建议 |
-| `run.json` | 本次运行的输入、源码与环境记录 |
-| `whole_word_plural.diff` | 原版和修改版的源码差异 |
+| [metrics.csv](runs/verified-26-three-variants/metrics.csv) | 三个版本的汇总指标，每版一行 |
+| [case_results.csv](runs/verified-26-three-variants/case_results.csv) | 81 行逐题结果，每版有 26 道评估题和一条作者示例 |
+| [raw_mcp.json](runs/verified-26-three-variants/raw_mcp.json) | MCP 原始响应，包括子系统排名、命中关键词和建议文件 |
+| [01_original_to_word_boundary.diff](runs/verified-26-three-variants/01_original_to_word_boundary.diff) | 从原版到严格整词 |
+| [02_word_boundary_to_plural.diff](runs/verified-26-three-variants/02_word_boundary_to_plural.diff) | 从严格整词到整词加常规复数 |
+
+复跑时，指定目录还会保存 `run.json` 和各版服务日志。报告所引用的公开文件也可打包下载。 [复跑压缩包](https://github.com/bri702/FTEC5660-Reproducibility/blob/main/runs/verified-26-three-variants/%E9%A1%B9%E7%9B%AE27_26%E9%A2%98%E4%B8%89%E7%89%88%E6%9C%AC%E5%A4%8D%E8%B7%91.zip)
+
+报告中原版与最终版的两版本对照也有独立记录。 [两版本对照](runs/verified-26-game)
 
 ## 范围和局限
 
-论文 §4 的开发会话和案例观察覆盖了更大的系统。这里的数字只衡量这组任务上的 MCP 检索结果，无法据此估计 Agent 写代码的正确率或开发效率。测试题由本项目编写，其中故障题刻意覆盖容易误匹配的开发场景。预期模块根据公开的子系统索引和任务描述人工指定。未标注的模块有时也能帮助排查，结果适用于这组题。建议路径来自作者的索引，公开仓库只提供部分原项目资料。 [论文评估方法与范围](https://arxiv.org/html/2602.20478v1#S4.SS1) · [作者的数据说明](https://github.com/arisvas4/codified-context-infrastructure/tree/6b0408fe86d8e802bcbd00cd6d2d057f288f518a/data)
+本实验只测量 MCP 在这 26 道任务上的检索结果。每道题只标注一个优先模块，其余候选也可能对排查有帮助。测试题包含刻意设计的词内误匹配案例，结果适用于这组题。作者的论文还研究了开发会话和案例，本实验的指标无法估计智能体的代码正确率或开发效率。 [论文评估方法与范围](https://arxiv.org/html/2602.20478v1#S4.SS1)
 
 ## 调试记录
 
-- 用 Python 直接启动作者的 `server.py`，通过 MCP 客户端完成握手和查询。这样可以直接核对作者发布的源码和工具。
-- 运行时观察到 MCP 依赖关于类型注解的警告，保存在服务日志里。两组服务均完成查询并生成结果。
+三版均完成 MCP 握手、工具与子系统索引核对，以及全部查询。运行时出现的 MCP 依赖类型注解警告记录在各版日志里。严格整词版漏掉复数后，用逐题结果和 MCP 原始响应定位了漏掉的关键词，再使用同一批题复跑验证。
 
 ## 源码与许可
 
-`upstream/server.py` 保留作者发布的源码，固定于 v1.0.0 的提交 `6b0408fe86d8e802bcbd00cd6d2d057f288f518a`。上游代码采用 MIT 许可证，许可文件随源码提供。 [固定版本的作者源码](https://github.com/arisvas4/codified-context-infrastructure/tree/6b0408fe86d8e802bcbd00cd6d2d057f288f518a) · [MIT 许可证](https://github.com/arisvas4/codified-context-infrastructure/blob/6b0408fe86d8e802bcbd00cd6d2d057f288f518a/LICENSE)
+`upstream/server.py` 保留作者 v1.0.0 的源码，固定于提交 `6b0408fe86d8e802bcbd00cd6d2d057f288f518a`。上游代码采用 MIT 许可证，许可文件随源码提供。 [固定版本的作者源码](https://github.com/arisvas4/codified-context-infrastructure/tree/6b0408fe86d8e802bcbd00cd6d2d057f288f518a) · [MIT 许可证](https://github.com/arisvas4/codified-context-infrastructure/blob/6b0408fe86d8e802bcbd00cd6d2d057f288f518a/LICENSE)
