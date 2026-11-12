@@ -50,8 +50,28 @@ python3.12 -m venv .venv
 - 血条颜色错误时，`ui` 从第四升到第三。改版去掉了 `health` 里的 `heal`，但 `health` 仍是战斗和伤害模块的完整关键词。
 - 原有 15 条相关题在两版都保持了第一名命中。复数规则保住了 `sprites` 对 `sprite`、`textures` 对 `texture` 的有用匹配，同时去掉 `textures` 对 `text` 的词内匹配。
 
-[汇总指标](runs/verified-26-game/metrics.csv) · [逐题对照](runs/verified-26-game/case_results.csv) · [MCP 原始响应](runs/verified-26-game/raw_mcp.json) · [环境与输入校验](runs/verified-26-game/run.json) · [源码差异](runs/verified-26-game/whole_word_plural.diff)
+[汇总指标](runs/verified-26-game/metrics.csv) · [逐题对照](runs/verified-26-game/case_results.csv) · [MCP 原始响应](runs/verified-26-game/raw_mcp.json) · [源码差异](runs/verified-26-game/whole_word_plural.diff)
 
+
+## 同一批 26 题的三版本复跑
+
+三版使用同样的 26 道自编评估题。每版另外运行一次作者示例，该示例单独记录。
+
+| 版本 | Top-1 命中 | Top-3 命中 | 前三名未标注候选总数 |
+| --- | ---: | ---: | ---: |
+| 作者原版 | 21/26 | 25/26 | 42 |
+| 严格整词 | 18/26 | 21/26 | 20 |
+| 整词加常规复数 | 23/26 | 26/26 | 23 |
+
+[汇总指标](runs/verified-26-three-variants/metrics.csv) · [81 行逐题结果](runs/verified-26-three-variants/case_results.csv) · [MCP 原始响应](runs/verified-26-three-variants/raw_mcp.json) · [报告引用的复跑压缩包](runs/verified-26-three-variants/项目27_26题三版本复跑.zip)
+
+代码变更分为两步。先将子串匹配改为严格整词匹配，再加入常规复数处理。 [第一步补丁](runs/verified-26-three-variants/01_original_to_word_boundary.diff) · [第二步补丁](runs/verified-26-three-variants/02_word_boundary_to_plural.diff)
+
+按上文安装依赖后，在仓库根目录运行三版本对照。
+
+```bash
+./.venv/bin/python -B runs/verified-26-three-variants/run_three_variants.py --project . --out runs/three-variant-26
+```
 
 ## 怎么查看输出
 
