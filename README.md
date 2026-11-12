@@ -52,7 +52,6 @@ python3.12 -m venv .venv
 
 [汇总指标](runs/verified-26-game/metrics.csv) · [逐题对照](runs/verified-26-game/case_results.csv) · [MCP 原始响应](runs/verified-26-game/raw_mcp.json) · [环境与输入校验](runs/verified-26-game/run.json) · [源码差异](runs/verified-26-game/whole_word_plural.diff)
 
-早期结果保存在 [20 题严格整词对照](runs/verified/metrics.csv) 和 [包含无关题的 26 题对照](runs/verified-26/metrics.csv)。
 
 ## 怎么查看输出
 
