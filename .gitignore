@@ -1,0 +1,11 @@
+.venv/
+.idea/
+__pycache__/
+runs/*
+!runs/verified/
+!runs/verified-26/
+!runs/verified-26-game/
+runs/verified*/mcp_*.log
+.DS_Store
+.env
+.env.*
