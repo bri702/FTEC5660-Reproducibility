@@ -1,0 +1,15 @@
+{
+  "started_at_utc": "2026-11-11T15:30:01.021376+00:00",
+  "python": "3.12.3",
+  "platform": "macOS-14.5-arm64-arm-64bit",
+  "mcp_sdk": "1.26.0",
+  "protocol_version": "2025-11-25",
+  "transport": "local stdio",
+  "author_repo": "https://github.com/arisvas4/codified-context-infrastructure",
+  "author_commit": "6b0408fe86d8e802bcbd00cd6d2d057f288f518a",
+  "author_server_sha256": "0d63c6390fe0127a875d2fe9cadcacdcae482946c6f51e9fb31d7c9ca1025def",
+  "modified_server_sha256": "8b56842572d9b0a5730b36b5784047283d9657f114867d7f66313c1043c0e080",
+  "cases_file": "cases.json",
+  "cases_sha256": "ddb3403f637c79896d7d8a1d92c776e2f696a6d23c8d7c1108244f98725f2209",
+  "evaluation": "Fixed, locally labeled questions; documentation examples excluded from aggregate metrics."
+}
