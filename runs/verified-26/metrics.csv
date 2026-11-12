@@ -1,0 +1,3 @@
+variant,positive_cases,top1_hits,top1_rate,top3_hits,top3_rate,negative_cases,negative_cases_with_recommendations,negative_false_recommendation_rate,irrelevant_top3_positive_total,irrelevant_top3_total
+original,21,18,0.857143,20,0.952381,5,4,0.8,33,43
+whole_word_plural,21,19,0.904762,21,1.0,5,2,0.4,19,22
