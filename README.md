@@ -53,7 +53,7 @@ Top-1 和 Top-3 分别统计预期子系统排第一、进入前三的题数。�
 | [01_original_to_word_boundary.diff](runs/verified-26-three-variants/01_original_to_word_boundary.diff) | 从原版到严格整词 |
 | [02_word_boundary_to_plural.diff](runs/verified-26-three-variants/02_word_boundary_to_plural.diff) | 从严格整词到整词加常规复数 |
 
-复跑时，指定目录还会保存 `run.json` 和各版服务日志。报告所引用的公开文件也可打包下载。 [复跑压缩包](https://github.com/bri702/FTEC5660-Reproducibility/blob/main/runs/verified-26-three-variants/%E9%A1%B9%E7%9B%AE27_26%E9%A2%98%E4%B8%89%E7%89%88%E6%9C%AC%E5%A4%8D%E8%B7%91.zip)
+复跑时，指定目录还会保存 `run.json` 和各版服务日志。
 
 报告中原版与最终版的两版本对照也有独立记录。 [两版本对照](runs/verified-26-game)
 
